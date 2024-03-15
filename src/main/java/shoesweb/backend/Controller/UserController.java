@@ -19,7 +19,7 @@ import shoesweb.backend.Service.UserInfoService;
 import java.util.Optional;
 
 @RestController
-@RequestMapping("/auth")
+@RequestMapping("/api")
 public class UserController {
 
     @Autowired
