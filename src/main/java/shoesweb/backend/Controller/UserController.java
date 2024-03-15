@@ -1,0 +1,68 @@
+package shoesweb.backend.Controller;
+
+import jakarta.servlet.http.HttpServletRequest;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.HttpHeaders;
+import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.security.authentication.AuthenticationManager;
+import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.userdetails.UsernameNotFoundException;
+import org.springframework.web.bind.annotation.*;
+import shoesweb.backend.Entity.AuthRequest;
+import shoesweb.backend.Entity.UserInfo;
+import shoesweb.backend.Repository.UserInfoRepository;
+import shoesweb.backend.Service.JwtService;
+import shoesweb.backend.Service.UserInfoService;
+
+import java.util.Optional;
+
+@RestController
+@RequestMapping("/auth")
+public class UserController {
+
+    @Autowired
+    private UserInfoService service;
+    @Autowired
+    private UserInfoRepository userInfoRepository;
+
+    @Autowired
+    private JwtService jwtService;
+
+    @Autowired
+    private AuthenticationManager authenticationManager;
+
+    @GetMapping("/welcome")
+    public ResponseEntity<?> welcom(){
+        return ResponseEntity.ok("Welcom");
+    }
+    @PostMapping("/addNewUser")
+    public String addNewUser(@RequestBody UserInfo userInfo) {
+        return service.addUser(userInfo);
+    }
+
+    @GetMapping("/user/userProfile")
+    @PreAuthorize("hasAuthority('ROLE_USER')")
+    public String userProfile() {
+        return "Welcome to User Profile";
+    }
+    @GetMapping("/admin/adminProfile")
+    @PreAuthorize("hasAuthority('ROLE_ADMIN')")
+    public ResponseEntity<Optional<UserInfo>> adminProfile(HttpServletRequest request){
+        String authHeader = request.getHeader("Authorization");
+        String token = authHeader.substring(7);
+        String username = jwtService.extractUsername(token);
+        return ResponseEntity.status(200).body(userInfoRepository.findByName(username));
+    }
+    @PostMapping("/generateToken")
+    public String authenticateAndGetToken(@RequestBody AuthRequest authRequest) {
+        Authentication authentication = authenticationManager.authenticate(new UsernamePasswordAuthenticationToken(authRequest.getUsername(), authRequest.getPassword()));
+        if (authentication.isAuthenticated()) {
+            return jwtService.generateToken(authRequest.getUsername());
+        } else {
+            throw new UsernameNotFoundException("invalid user request !");
+        }
+    }
+
+}
