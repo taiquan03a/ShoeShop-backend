@@ -23,7 +23,5 @@ public class UserInfo {
     private String fullName;
     private String avatar;
     private int status;
-    @Column(name = "role_id")
-    private int roleId;
     private String roles;
 }

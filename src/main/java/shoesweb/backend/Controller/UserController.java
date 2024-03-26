@@ -19,7 +19,7 @@ import shoesweb.backend.Service.UserInfoService;
 import java.util.Optional;
 
 @RestController
-@RequestMapping("/auth")
+@RequestMapping("/api")
 public class UserController {
 
     @Autowired
@@ -44,8 +44,11 @@ public class UserController {
 
     @GetMapping("/user/userProfile")
     @PreAuthorize("hasAuthority('ROLE_USER')")
-    public String userProfile() {
-        return "Welcome to User Profile";
+    public ResponseEntity<Optional<UserInfo>> userProfile(HttpServletRequest request){
+        String authHeader = request.getHeader("Authorization");
+        String token = authHeader.substring(7);
+        String username = jwtService.extractUsername(token);
+        return ResponseEntity.status(200).body(userInfoRepository.findByName(username));
     }
     @GetMapping("/admin/adminProfile")
     @PreAuthorize("hasAuthority('ROLE_ADMIN')")
@@ -60,9 +63,8 @@ public class UserController {
         Authentication authentication = authenticationManager.authenticate(new UsernamePasswordAuthenticationToken(authRequest.getUsername(), authRequest.getPassword()));
         if (authentication.isAuthenticated()) {
             return jwtService.generateToken(authRequest.getUsername());
-        } else {
-            throw new UsernameNotFoundException("invalid user request !");
         }
+        throw new UsernameNotFoundException("invalid user request !");
     }
 
 }
